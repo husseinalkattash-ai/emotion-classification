@@ -1,0 +1,29 @@
+# Data & outputs (never commit datasets or checkpoints)
+data/*
+!data/.gitkeep
+outputs/*
+!outputs/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# Checkpoints / models
+*.pth
+*.ckpt
+*.pt
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

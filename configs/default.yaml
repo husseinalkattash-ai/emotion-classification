@@ -1,0 +1,67 @@
+# Default config for a local (GPU) run. Paths are relative to the project root,
+# so run the scripts from the project root directory.
+project:
+  name: emotion-classifier
+  seed: 42
+  device: cuda                  # falls back to CPU automatically if unavailable
+
+data:
+  root: data/rafdb
+  # Dataset layout: "imagefolder" (Kaggle mirror) or "rafdb_official".
+  format: imagefolder
+  # -- imagefolder layout (Kaggle): root/<train_dir|test_dir>/<class_id>/*.jpg
+  train_dir: DATASET/train
+  test_dir: DATASET/test
+  # -- rafdb_official layout (used only when format: rafdb_official)
+  aligned_dir: basic/Image/aligned
+  label_file: basic/EmoLabel/list_patition_label.txt
+  num_classes: 7
+  # index order below is the model's 0-indexed output order
+  classes: [surprise, fear, disgust, happy, sad, angry, neutral]
+  image_size: 224
+  val_split: 0.1                # carved out of the RAF-DB train partition
+  # Auxiliary training data pooled into the TRAIN split only (val/test stay
+  # RAF-DB so metrics remain comparable to the RAF-DB-only baselines).
+  extra_train_datasets:
+    - name: affectnet
+      root: "data/affectnet/archive (3)"
+      train_dir: Train
+      class_alias:              # map AffectNet class folders -> our 7 classes
+        anger: angry
+        contempt: drop          # 8th class excluded (RAF-DB has 7)
+
+model:
+  backbone: resnet50            # or efficientnet_b0
+  pretrained: true
+  freeze_ratio: 0.5             # partial fine-tune generalized best (full unfreeze underfit)
+  dropout: 0.5
+
+train:
+  epochs: 40
+  batch_size: 64                # ~0.4 GB/step at bs=32, so 64 fits easily on 8 GB
+  num_workers: 4
+  optimizer: adamw
+  lr: 0.0001
+  backbone_lr_mult: 1.0         # 1.0 = single LR; <1 enables discriminative fine-tuning
+  weight_decay: 0.02            # a bit more regularization vs. overfitting
+  scheduler: cosine
+  use_class_weights: false      # disabled: balanced_sampler handles imbalance instead
+  balanced_sampler: true        # oversample minority classes (fear/disgust) per epoch
+  early_stopping_patience: 10   # stronger aug -> noisier val, be more patient
+  amp: true                     # mixed precision
+  grad_clip: 1.0                # max grad norm (null to disable)
+  label_smoothing: 0.1          # curb overconfidence (train loss was crashing to ~0)
+
+augment:
+  horizontal_flip: true
+  rotation_deg: 12
+  brightness: 0.2
+  contrast: 0.2
+  saturation: 0.2
+  random_resized_crop_scale: 0.8   # mild random zoom/crop (min area scale)
+  random_erasing: 0.25             # random occlusion, p=0.25
+
+output:
+  dir: outputs
+  checkpoint_name: best_model.pth
+  tensorboard: true

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emotion Classifier — AI-Powered Facial Emotion Recognition</title>
+  <meta name="description" content="Upload a face photo and get real-time emotion classification using a deep learning model trained on RAF-DB." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+  <!-- Animated background -->
+  <div class="bg-gradient" aria-hidden="true"></div>
+
+  <div class="app-container">
+
+    <!-- ── Hero ───────────────────────────────────────── -->
+    <header class="hero">
+      <div class="hero__badge">
+        <span class="dot"></span>
+        Model Ready
+      </div>
+      <h1 class="hero__title">Emotion Classifier</h1>
+      <p class="hero__subtitle">
+        Upload a face photo and let our AI identify the emotion in real time.
+        Powered by a ResNet-50 model trained on RAF-DB.
+      </p>
+    </header>
+
+    <!-- ── Main Grid ──────────────────────────────────── -->
+    <div class="main-grid">
+
+      <!-- Left Column: Upload + Preview -->
+      <div class="card" style="position: relative;">
+        <div class="card__header">
+          <span class="card__header-icon">📤</span>
+          <span class="card__header-title">Upload Image</span>
+        </div>
+        <div class="card__body">
+
+          <!-- Drop zone -->
+          <div class="upload-zone" id="upload-zone">
+            <span class="upload-zone__icon">🖼️</span>
+            <p class="upload-zone__text">
+              Drag &amp; drop your image here, or <strong>click to browse</strong>
+            </p>
+            <p class="upload-zone__hint">JPG, PNG, WebP — max 10 MB</p>
+            <input type="file" id="file-input" accept="image/*" />
+          </div>
+
+          <!-- Image preview (hidden until file selected) -->
+          <div class="preview-wrapper" id="preview-wrapper">
+            <img class="preview-img" id="preview-img" alt="Selected image preview" />
+            <span class="preview-filename" id="preview-filename"></span>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="btn-actions" style="margin-top: 1.25rem;">
+            <button class="btn btn-primary" id="analyze-btn" disabled>
+              🔍 Analyze Emotion
+            </button>
+            <button class="btn btn-ghost" id="clear-btn">
+              ✕ Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Spinner overlay -->
+        <div class="spinner-overlay" id="spinner-overlay">
+          <div class="spinner"></div>
+          <span class="spinner-text">Analyzing emotion…</span>
+        </div>
+      </div>
+
+      <!-- Right Column: Results -->
+      <div class="card">
+        <div class="card__header">
+          <span class="card__header-icon">📊</span>
+          <span class="card__header-title">Prediction Results</span>
+        </div>
+        <div class="card__body">
+
+          <!-- Placeholder (shown when no result yet) -->
+          <div class="results-placeholder" id="results-placeholder">
+            <span class="results-placeholder__icon">🎯</span>
+            <p class="results-placeholder__text">
+              Upload an image to see the<br>emotion prediction here.
+            </p>
+          </div>
+
+          <!-- Actual result (hidden until prediction completes) -->
+          <div class="result-content" id="result-content">
+            <div class="prediction-header">
+              <span class="prediction-emoji" id="pred-emoji"></span>
+              <div class="prediction-info">
+                <div class="prediction-label" id="pred-label"></div>
+                <div class="prediction-confidence" id="pred-confidence"></div>
+                <span class="face-badge" id="face-badge"></span>
+              </div>
+            </div>
+
+            <!-- Uncertainty note (shown only when the call is ambiguous) -->
+            <div class="uncertainty-note" id="uncertainty-note"></div>
+
+            <!-- Explainability: what the model saw + where it looked -->
+            <div class="explain-row" id="explain-row">
+              <figure class="explain-fig">
+                <img class="explain-img" id="crop-img" alt="The region the model analyzed" />
+                <figcaption class="explain-cap">Analyzed region</figcaption>
+              </figure>
+              <figure class="explain-fig">
+                <img class="explain-img" id="gradcam-img" alt="Grad-CAM attention heatmap" />
+                <figcaption class="explain-cap">Attention (Grad-CAM)</figcaption>
+              </figure>
+            </div>
+
+            <div class="prob-bars" id="prob-bars"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /.main-grid -->
+
+    <!-- ── History ────────────────────────────────────── -->
+    <div class="card history-section">
+      <div class="card__header">
+        <span class="card__header-icon">🕑</span>
+        <span class="card__header-title">Session History</span>
+      </div>
+      <div class="card__body">
+        <div class="history-empty" id="history-empty">
+          <span class="history-empty__icon">📋</span>
+          No predictions yet — upload an image to get started.
+        </div>
+        <ul class="history-list" id="history-list"></ul>
+      </div>
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────── -->
+    <footer class="footer">
+      Emotion Classifier &copy; 2026 Soft-Park &mdash;
+      Built with <a href="https://fastapi.tiangolo.com" target="_blank" rel="noopener">FastAPI</a>
+      &amp; PyTorch
+    </footer>
+
+  </div><!-- /.app-container -->
+
+  <!-- Error toast -->
+  <div class="error-toast" id="error-toast"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
