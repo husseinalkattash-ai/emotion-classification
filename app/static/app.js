@@ -46,6 +46,13 @@ const history = [];
 // ── Upload Zone Events ─────────────────────────────────────
 uploadZone.addEventListener('click', () => fileInput.click());
 
+uploadZone.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    fileInput.click();
+  }
+});
+
 uploadZone.addEventListener('dragover', (e) => {
   e.preventDefault();
   uploadZone.classList.add('drag-over');
