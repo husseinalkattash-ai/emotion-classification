@@ -1,8 +1,11 @@
-"""RAF-DB dataset, transforms, and the (critical) label mapping.
+"""RAF-DB dataset reading, splitting, and the (critical) label mapping.
 
 RAF-DB basic emotions use an official 1-indexed labeling. We map those IDs to
 the model's 0-indexed class order (``config.data.classes``) via an explicit
 mapping — never assume alphabetical ordering.
+
+Image preprocessing (normalization + augmentation pipelines) lives in
+``preprocessing.py``; it is re-exported here for backward compatibility.
 """
 from __future__ import annotations
 
@@ -16,13 +19,16 @@ import torch
 from PIL import Image
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
-from torchvision import transforms
+
+from src.data.preprocessing import IMAGENET_MEAN, IMAGENET_STD, build_transforms
 
 logger = logging.getLogger(__name__)
 
-# ImageNet normalization (pretrained backbones expect this).
-IMAGENET_MEAN = (0.485, 0.456, 0.406)
-IMAGENET_STD = (0.229, 0.224, 0.225)
+__all__ = [
+    "IMAGENET_MEAN", "IMAGENET_STD", "build_transforms",
+    "RAFDB_ID_TO_NAME", "RAFDB_LABEL_MAP", "build_label_map",
+    "RAFDBDataset", "build_datasets",
+]
 
 # Official RAF-DB basic-emotion labeling: 1-indexed ID -> emotion name.
 # DO NOT reorder — this is fixed by the dataset authors.
@@ -67,68 +73,6 @@ def build_label_map(classes: Sequence[str]) -> Dict[int, int]:
 RAFDB_LABEL_MAP: Dict[int, int] = build_label_map(
     [RAFDB_ID_TO_NAME[i] for i in range(1, 8)]
 )
-
-
-def build_transforms(
-    image_size: int,
-    train: bool,
-    horizontal_flip: bool = True,
-    rotation_deg: float = 10.0,
-    brightness: float = 0.1,
-    contrast: float = 0.0,
-    saturation: float = 0.0,
-    rrc_scale_min: float = 1.0,
-    random_erasing: float = 0.0,
-) -> Callable:
-    """Return torchvision transforms for train (augmented) or eval (deterministic).
-
-    Args:
-        image_size: Target square size in pixels.
-        train: If True, apply augmentation; otherwise deterministic resize only.
-        horizontal_flip: Enable random horizontal flip (train only).
-        rotation_deg: Max random rotation in degrees (train only).
-        brightness, contrast, saturation: ColorJitter factors (train only).
-        rrc_scale_min: If < 1.0, use RandomResizedCrop with this minimum area
-            scale (a mild random zoom/crop); 1.0 disables it (plain resize).
-        random_erasing: Probability for RandomErasing (0 disables). Applied on
-            the tensor after normalization.
-
-    Returns:
-        A composed torchvision transform.
-    """
-    if train:
-        if rrc_scale_min < 1.0:
-            first: Callable = transforms.RandomResizedCrop(
-                image_size, scale=(rrc_scale_min, 1.0), ratio=(0.9, 1.1)
-            )
-        else:
-            first = transforms.Resize((image_size, image_size))
-        ops: List[Callable] = [first]
-        if horizontal_flip:
-            ops.append(transforms.RandomHorizontalFlip())
-        if rotation_deg:
-            ops.append(transforms.RandomRotation(rotation_deg))
-        if brightness or contrast or saturation:
-            ops.append(
-                transforms.ColorJitter(
-                    brightness=brightness, contrast=contrast, saturation=saturation
-                )
-            )
-        ops += [
-            transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
-        ]
-        if random_erasing > 0:
-            ops.append(transforms.RandomErasing(p=random_erasing))
-        return transforms.Compose(ops)
-
-    return transforms.Compose(
-        [
-            transforms.Resize((image_size, image_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
-        ]
-    )
 
 
 def _aligned_filename(original: str) -> str:

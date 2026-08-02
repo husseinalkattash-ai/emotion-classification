@@ -288,7 +288,8 @@ emotion-classification/
 +-- src/
 |   +-- config.py               # load & validate YAML config
 |   +-- data/
-|   |   +-- dataset.py          # RAF-DB Dataset, transforms, RAFDB_LABEL_MAP, extra datasets
+|   |   +-- dataset.py          # data reading: RAF-DB Dataset, RAFDB_LABEL_MAP, splits, extra datasets
+|   |   +-- preprocessing.py    # image preprocessing: normalization + train/eval transforms
 |   |   +-- face_preprocess.py  # face detection + eye-alignment (inference)
 |   +-- models/classifier.py    # EmotionClassifier (backbone + head)
 |   +-- engine/
@@ -303,9 +304,24 @@ emotion-classification/
 +-- README.md
 ```
 
+### Code map (where each part lives)
+
+| Component | File | Key entry points |
+|---|---|---|
+| **1. Data reading** | `src/data/dataset.py` | `RAFDBDataset`, `build_datasets()`, `RAFDB_LABEL_MAP` |
+| **2. Data preprocessing** | `src/data/preprocessing.py` | `build_transforms()`, `IMAGENET_MEAN/STD` |
+| | `src/data/face_preprocess.py` | `detect_and_align()` (inference-time face alignment) |
+| **3. Models** | `src/models/classifier.py` | `EmotionClassifier`, `build_model()` |
+| **4. Training** | `src/engine/train.py` | `train()`, `train_one_epoch()` |
+| Evaluation | `src/engine/evaluate.py` | `evaluate_model()`, `compute_metrics()` |
+| Interpretability | `src/interpret/gradcam.py` | `compute_gradcam_overlay()` |
+| Inference | `src/inference.py` | `predict()` |
+
 **Design notes**
 
 - Logic lives in `src/`; `scripts/` are thin `argparse` entry points; `app/` is the web layer.
+- Data **reading** (`dataset.py`) and **preprocessing** (`preprocessing.py`) are separate
+  modules so each stage of the pipeline is independently testable and easy to locate.
 - RAF-DB ships **pre-aligned** crops (used directly for training). At **inference**
   on raw photos, `face_preprocess.py` detects the eyes and applies a similarity
   transform onto a template *measured from RAF-DB crops*, so live images are framed
