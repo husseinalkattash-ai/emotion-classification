@@ -26,6 +26,51 @@ Runs on a local machine with a CUDA GPU (falls back to CPU).
 
 ---
 
+## Quick start — run the app only (no training)
+
+You do **not** need a GPU or the dataset to run the app. You only need the code,
+the Python dependencies, and a trained checkpoint at `outputs/best_model.pth`.
+
+```bash
+# 1. Get the code
+git clone https://github.com/<your-username>/<repo-name>.git
+cd <repo-name>
+
+# 2. (Recommended) create a virtual environment
+python -m venv .venv
+.venv\Scripts\Activate.ps1          # Windows PowerShell
+# source .venv/bin/activate         # Linux / macOS
+
+# 3. Install PyTorch (CPU build is fine for running the app)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# 4. Install the rest of the dependencies
+pip install -r requirements.txt
+```
+
+Then **copy the trained model** `best_model.pth` from the machine where it was
+trained into this folder:
+
+```
+outputs/best_model.pth
+```
+
+(The repo does not include it — `outputs/` is git-ignored. This one file is all
+the app needs; no dataset required.)
+
+Finally, start the web app:
+
+```bash
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Open <http://127.0.0.1:8000> and upload a face photo.
+
+> First run downloads a small (~225 KB) face-detector model if it is not already
+> in `assets/`, so allow internet access once.
+
+---
+
 ## 1. Requirements & setup on a new machine
 
 ### 1.1 System requirements
