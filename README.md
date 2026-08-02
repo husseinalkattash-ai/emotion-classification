@@ -26,24 +26,83 @@ Runs on a local machine with a CUDA GPU (falls back to CPU).
 
 ---
 
-## 1. Requirements
+## 1. Requirements & setup on a new machine
 
-- Python 3.10+ and (ideally) an NVIDIA GPU with a working CUDA driver.
-- Install **PyTorch with CUDA first**, then the rest:
+### 1.1 System requirements
+
+- **OS:** Windows, Linux, or macOS.
+- **Python:** 3.10 or newer.
+- **git** (to clone the repo).
+- **GPU (optional):** an NVIDIA GPU with a current CUDA driver makes training/inference much faster. Without one, everything still runs on CPU (slower).
+- **Disk:** roughly 3–5 GB for the Python dependencies (PyTorch is the large one).
+- **Internet:** needed once, to install packages and (if missing) to auto-download the small face-detector model.
+
+### 1.2 Get the code
 
 ```bash
-# 1. PyTorch with CUDA (pick the command for your CUDA from pytorch.org)
+git clone https://github.com/<your-username>/<repo-name>.git
+cd <repo-name>
+```
+
+### 1.3 Create a virtual environment (recommended)
+
+```bash
+# Windows (PowerShell)
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+
+# Linux / macOS
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 1.4 Install PyTorch first (pick ONE)
+
+Install PyTorch matching the machine, then the rest. Get the exact command for your CUDA from <https://pytorch.org/get-started/locally/>.
+
+```bash
+# GPU (example: CUDA 12.1)
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
-# 2. Everything else
+# OR CPU-only (no NVIDIA GPU)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+```
+
+### 1.5 Install the remaining dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-Confirm the GPU is visible:
+This installs everything the project uses: `numpy`, `pandas`, `pillow`,
+`opencv-python-headless`, `mediapipe` (face detection/alignment), `scikit-learn`,
+`matplotlib`, `seaborn`, `pyyaml`, `tqdm`, `tensorboard`, `grad-cam`, `pytest`,
+and the web-app stack (`fastapi`, `uvicorn[standard]`, `python-multipart`).
+
+### 1.6 Verify the install
 
 ```bash
-python -c "import torch; print(torch.cuda.is_available())"   # -> True
+python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
+pytest -q          # the test suite should pass (no dataset needed)
 ```
+
+### 1.7 IMPORTANT — the trained model is NOT in the repo
+
+`data/` (datasets) and `outputs/` (checkpoints, logs) are **git-ignored**, so a
+fresh clone contains **code only** — no trained model. To run the web app or make
+predictions you need a checkpoint at `outputs/best_model.pth`. Two options:
+
+- **Copy the checkpoint** `outputs/best_model.pth` from the machine where you
+  trained, into the same path here. (This is all the web app needs — no dataset
+  required to run it.)
+- **Or train from scratch** on this machine (Sections 2–3), which does require
+  downloading the dataset.
+
+### 1.8 The face-detector model
+
+Face detection/alignment uses a small BlazeFace model at
+`assets/blaze_face_short_range.tflite`. It ships with the repo; if it is ever
+missing, the code auto-downloads it on first use (needs internet that once).
 
 ---
 
